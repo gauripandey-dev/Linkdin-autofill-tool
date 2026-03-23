@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinkedIn AI Auto-Poster</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050508;--s1:#0c0c14;--s2:#11111c;--border:#1e1e30;--bh:#2c2c48;--li:#0a66c2;--li-h:#0952a0;--accent:#7c6ef7;--accent-h:#6457e0;--green:#22c55e;--gold:#f59e0b;--red:#ef4444;--text:#e4e4f0;--muted:#5a5a78;--dim:#3a3a55}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
+.wrap{max-width:1000px;margin:0 auto;padding:40px 20px 100px;position:relative;z-index:1}
+
+nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:48px}
+.logo{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:-0.5px;color:#fff}
+.logo span{color:var(--accent)}
+.nav-right{display:flex;align-items:center;gap:12px}
+
+#li-connect-btn{display:flex;align-items:center;gap:8px;background:var(--li);color:#fff;border:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;padding:9px 18px;border-radius:6px;cursor:pointer;transition:all .2s}
+#li-connect-btn:hover{background:var(--li-h);transform:translateY(-1px);box-shadow:0 4px 16px rgba(10,102,194,.35)}
+#li-connect-btn svg{width:16px;height:16px;fill:#fff;flex-shrink:0}
+
+#li-badge{display:none;align-items:center;gap:8px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:var(--green);font-size:12px;font-family:'JetBrains Mono',monospace;padding:7px 14px;border-radius:6px}
+#li-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+#disc-btn{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline;font-family:'Inter',sans-serif;transition:color .15s}
+#disc-btn:hover{color:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.hero{margin-bottom:36px}
+.hero-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(124,110,247,.08);border:1px solid rgba(124,110,247,.2);color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:5px 12px;border-radius:2px;margin-bottom:16px}
+.hero-tag .live{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pulse 1.5s infinite}
+h1{font-family:'Syne',sans-serif;font-size:clamp(32px,5vw,52px);font-weight:800;line-height:1.05;letter-spacing:-1.5px;color:#fff;margin-bottom:10px}
+h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent),#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{color:var(--muted);font-size:14px;line-height:1.6;max-width:520px}
+
+#connect-gate{background:var(--s1);border:1px dashed var(--border);border-radius:12px;padding:36px 28px;margin-bottom:24px;display:none;text-align:center}
+#connect-gate h3{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:8px}
+#connect-gate p{color:var(--muted);font-size:13px;line-height:1.65;max-width:400px;margin:0 auto 22px}
+.li-big-btn{display:inline-flex;align-items:center;gap:10px;background:var(--li);color:#fff;border:none;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;padding:12px 26px;border-radius:8px;cursor:pointer;transition:all .2s}
+.li-big-btn:hover{background:var(--li-h);transform:translateY(-1px);box-shadow:0 6px 24px rgba(10,102,194,.4)}
+.li-big-btn svg{width:18px;height:18px;fill:#fff}
+.oauth-note{margin-top:12px;font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace}
+
+.controls{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:22px 24px;margin-bottom:22px;display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.field{flex:1;min-width:150px}
+.field label{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+select{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Inter',sans-serif;font-size:13px;padding:9px 28px 9px 12px;border-radius:6px;outline:none;transition:border-color .2s;appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%235a5a78' d='M5 6L0 0h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+select:focus{border-color:var(--accent)}
+.gen-btn{flex:0 0 auto;height:40px;padding:0 22px;background:var(--accent);color:#fff;border:none;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;border-radius:6px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px}
+.gen-btn:hover:not(:disabled){background:var(--accent-h);transform:translateY(-1px);box-shadow:0 4px 16px rgba(124,110,247,.35)}
+.gen-btn:disabled{opacity:.45;cursor:not-allowed}
+.spin{width:12px;height:12px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.status{display:none;align-items:center;gap:12px;background:rgba(124,110,247,.05);border:1px solid rgba(124,110,247,.15);border-radius:6px;padding:12px 16px;margin-bottom:18px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:.5px}
+.status.show{display:flex}
+.sbar{flex:1;height:2px;background:var(--border);border-radius:1px;overflow:hidden}
+.sfill{height:100%;background:var(--accent);transition:width .6s ease}
+
+#trend-bar{display:none;align-items:center;gap:12px;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:18px}
+#trend-bar.show{display:flex}
+.tlabel{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);white-space:nowrap}
+.tpills{display:flex;flex-wrap:wrap;gap:6px}
+.tpill{font-size:11px;padding:3px 9px;border-radius:100px;background:rgba(255,255,255,.03);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;transition:all .15s}
+.tpill:hover{border-color:var(--accent);color:var(--accent)}
+
+.err{display:none;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18);color:#fca5a5;border-radius:6px;padding:12px 16px;font-size:13px;margin-bottom:16px}
+.err.show{display:block}
+
+#posts{display:grid;gap:18px}
+
+.pcard{background:var(--s1);border:1px solid var(--border);border-radius:10px;overflow:hidden;animation:fadeUp .35s ease both;opacity:0;transition:border-color .3s}
+.pcard:hover{border-color:var(--bh)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.pcard:nth-child(1){animation-delay:.04s}.pcard:nth-child(2){animation-delay:.09s}
+.pcard:nth-child(3){animation-delay:.14s}.pcard:nth-child(4){animation-delay:.19s}
+.pcard:nth-child(5){animation-delay:.24s}
+
+.phead{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.015)}
+.pmeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pnum{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);letter-spacing:1px}
+.ttag{font-size:10px;padding:2px 8px;border-radius:3px;font-family:'JetBrains Mono',monospace}
+.t-ai{background:rgba(124,110,247,.1);color:#a78bfa;border:1px solid rgba(124,110,247,.2)}
+.t-con{background:rgba(10,102,194,.1);color:#60a5fa;border:1px solid rgba(10,102,194,.2)}
+.t-mgmt{background:rgba(245,158,11,.08);color:var(--gold);border:1px solid rgba(245,158,11,.18)}
+.t-prod{background:rgba(34,197,94,.08);color:#4ade80;border:1px solid rgba(34,197,94,.18)}
+.tbadge{font-size:9px;padding:2px 7px;border-radius:100px;background:rgba(245,158,11,.07);color:var(--gold);border:1px solid rgba(245,158,11,.15);font-family:'JetBrains Mono',monospace}
+.pstatus{font-size:10px;padding:2px 8px;border-radius:100px;font-family:'JetBrains Mono',monospace;display:none}
+.ps-sched{background:rgba(124,110,247,.1);color:#a78bfa;border:1px solid rgba(124,110,247,.2)}
+.ps-live{background:rgba(34,197,94,.08);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.ps-fail{background:rgba(239,68,68,.08);color:#fca5a5;border:1px solid rgba(239,68,68,.2)}
+
+.pactions{display:flex;gap:7px}
+.ibtn{background:none;border:1px solid var(--border);color:var(--muted);width:30px;height:30px;border-radius:5px;cursor:pointer;font-size:12px;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.ibtn:hover{border-color:var(--accent);color:var(--accent)}
+.ibtn.ok{border-color:var(--green);color:var(--green)}
+
+.pbody{padding:18px 20px}
+.ptext{font-size:14px;line-height:1.78;color:var(--text);white-space:pre-wrap;word-break:break-word}
+.hook{font-weight:500;color:#fff;font-size:15px}
+.htags{color:#5b8af5;font-size:12.5px;display:block;margin-top:4px}
+
+.pfoot{padding:11px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cct{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--dim)}
+.sched-wrap{display:flex;align-items:center;gap:7px;flex:1}
+.slabel{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.sched-sel{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:10px;padding:5px 10px;border-radius:5px;outline:none;cursor:pointer;transition:border-color .15s;appearance:none}
+.sched-sel:focus{border-color:var(--accent)}
+
+.post-btn{display:flex;align-items:center;gap:7px;background:var(--li);color:#fff;border:none;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:1px;text-transform:uppercase;padding:7px 14px;border-radius:5px;cursor:pointer;transition:all .18s;white-space:nowrap}
+.post-btn:hover:not(:disabled){background:var(--li-h);transform:translateY(-1px);box-shadow:0 3px 12px rgba(10,102,194,.35)}
+.post-btn:disabled{opacity:.4;cursor:not-allowed}
+.post-btn svg{width:13px;height:13px;fill:#fff;flex-shrink:0}
+.bspin{width:11px;height:11px;border:1.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+
+.copy-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:6px 12px;border-radius:5px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent)}
+.copy-btn.ok{border-color:var(--green);color:var(--green)}
+
+#oauth-modal,#llm-modal{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);align-items:center;justify-content:center}
+#oauth-modal.show,#llm-modal.show{display:flex}
+.mbox{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:34px 30px;max-width:460px;width:92%;animation:fadeUp .25s ease}
+.mbox h2{font-family:'Syne',sans-serif;font-size:21px;font-weight:800;color:#fff;margin-bottom:8px}
+.mbox p{color:var(--muted);font-size:13px;line-height:1.65;margin-bottom:18px}
+.msteps{list-style:none;margin-bottom:20px}
+.msteps li{display:flex;align-items:flex-start;gap:10px;font-size:12.5px;color:var(--text);padding:8px 0;border-bottom:1px solid var(--border)}
+.msteps li:last-child{border-bottom:none}
+.snum{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.minput{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;padding:10px 14px;border-radius:6px;outline:none;margin-bottom:12px;transition:border-color .2s}
+.minput::placeholder{color:var(--dim)}
+.minput:focus{border-color:var(--accent)}
+.tnote{font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-bottom:16px;line-height:1.5}
+.mbtns{display:flex;gap:10px}
+.mconfirm{flex:1;background:var(--li);color:#fff;border:none;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:11px;border-radius:6px;cursor:pointer;transition:background .2s}
+.mconfirm:hover{background:var(--li-h)}
+.mcancel{background:none;border:1px solid var(--border);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:11px 18px;border-radius:6px;cursor:pointer;transition:all .15s}
+.mcancel:hover{border-color:var(--red);color:var(--red)}
+
+.empty{text-align:center;padding:72px 20px;color:var(--muted)}
+.empty-icon{font-size:34px;margin-bottom:12px;opacity:.25}
+.empty h3{font-family:'Syne',sans-serif;font-size:20px;color:var(--text);margin-bottom:6px;font-weight:700}
+.empty p{font-size:13px;line-height:1.6}
+
+#toast{position:fixed;bottom:24px;right:24px;z-index:200;background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:12px 18px;font-size:13px;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:10px;transform:translateY(80px);transition:transform .3s ease;box-shadow:0 8px 32px rgba(0,0,0,.5);pointer-events:none}
+#toast.show{transform:translateY(0)}
+#toast.success{border-color:rgba(34,197,94,.3);color:var(--green)}
+#toast.error{border-color:rgba(239,68,68,.3);color:#fca5a5}
+#toast.info{border-color:rgba(124,110,247,.3);color:var(--accent)}
+
+@media(max-width:600px){.controls{flex-direction:column}.gen-btn{width:100%;justify-content:center}.pfoot{flex-direction:column;align-items:stretch}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav>
+  <div class="logo">post<span>pilot</span></div>
+  <div class="nav-right">
+    <button id="li-connect-btn" onclick="openOAuth()">
+      <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      Connect LinkedIn
+    </button>
+    <div id="li-badge">
+      <span class="dot"></span>
+      <span id="li-name">Connected</span>
+      <button id="disc-btn" onclick="disconnect()">disconnect</button>
+    </div>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-tag"><span class="live"></span>Trend-Aware · Auto-Post</div>
+  <h1>Generate. Schedule.<br><em>Auto-Post.</em></h1>
+  <p class="hero-sub">Trending-aware LinkedIn posts, generated in seconds and posted directly to your profile — no copy-paste, no manual steps.</p>
+</div>
+
+<div id="connect-gate">
+  <h3>Connect LinkedIn to Enable Auto-Posting</h3>
+  <p>Link your LinkedIn account once. Every post you generate can then be published or scheduled with a single click — exactly like Final Layer AI.</p>
+  <button class="li-big-btn" onclick="openOAuth()">
+    <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+    Connect LinkedIn Account
+  </button>
+  <div class="oauth-note">Uses LinkedIn OAuth 2.0 — your password is never stored</div>
+</div>
+
+<div class="controls">
+  <div class="field">
+    <label>Topic</label>
+    <select id="topic">
+      <option value="mixed">Mixed — All Topics</option>
+      <option value="ai">AI in Business</option>
+      <option value="consulting">Consulting & Strategy</option>
+      <option value="management">Management Thinking</option>
+      <option value="productivity">Productivity & Decisions</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Tone</label>
+    <select id="tone">
+      <option value="authoritative">Authoritative & Direct</option>
+      <option value="contrarian">Contrarian & Bold</option>
+      <option value="thought-provoking">Thought-Provoking</option>
+      <option value="data-driven">Data-Driven</option>
+    </select>
+  </div>
+  <div class="field" style="flex:0 0 120px">
+    <label>Posts</label>
+    <select id="count">
+      <option value="3">3 Posts</option>
+      <option value="4">4 Posts</option>
+      <option value="5" selected>5 Posts</option>
+    </select>
+  </div>
+  <div class="field" style="flex:0 0 220px">
+    <label>After Generate</label>
+    <select id="after-gen">
+      <option value="manual" selected>Manual post (current)</option>
+      <option value="autopost_now">Auto-post now</option>
+    </select>
+  </div>
+  <button class="gen-btn" id="gen-btn" onclick="run()">
+    <span class="spin" id="spinner"></span>
+    <span id="btn-text">Generate</span>
+  </button>
+</div>
+
+<div class="err" id="err"></div>
+<div class="status" id="status">
+  <span id="stext">Scanning trends...</span>
+  <div class="sbar"><div class="sfill" id="sfill" style="width:0%"></div></div>
+</div>
+<div id="trend-bar">
+  <span class="tlabel">Live Trends</span>
+  <div class="tpills" id="tpills"></div>
+</div>
+
+<div id="posts">
+  <div class="empty">
+    <div class="empty-icon">◈</div>
+    <h3>Nothing generated yet</h3>
+    <p>Hit Generate — live trends are scanned first,<br>then each post can be posted directly to LinkedIn.</p>
+  </div>
+</div>
+</div>
+
+<!-- OAuth Modal (LinkedIn) -->
+<div id="oauth-modal">
+  <div class="mbox">
+    <h2>Connect LinkedIn</h2>
+    <p>Paste your LinkedIn Access Token. Stored only in your browser session — never logged or shared.</p>
+    <ul class="msteps">
+      <li><span class="snum">1</span>Go to <strong>LinkedIn Developer Portal</strong> → create an app → request <code>w_member_social</code> permission</li>
+      <li><span class="snum">2</span>Complete the OAuth 2.0 flow to get a <strong>User Access Token</strong></li>
+      <li><span class="snum">3</span>Paste it below — posts directly via LinkedIn's <code>/ugcPosts</code> API</li>
+    </ul>
+    <div class="tnote">Token stored in sessionStorage only — cleared when tab closes.</div>
+    <input class="minput" id="tok-in" type="password" placeholder="Paste LinkedIn access token...">
+    <input class="minput" id="nam-in" type="text" placeholder="Your display name (optional)">
+    <div class="mbtns">
+      <button class="mcancel" onclick="closeModal()">Cancel</button>
+      <button class="mconfirm" onclick="confirmConnect()">Connect</button>
+    </div>
+  </div>
+</div>
+
+<!-- LLM Key Modal (Anthropic) -->
+<div id="llm-modal">
+  <div class="mbox">
+    <h2>Set LLM API Key</h2>
+    <p>This is needed to generate posts. The key is stored only in <code>sessionStorage</code> and cleared when the tab closes.</p>
+    <input class="minput" id="llm-key-in" type="password" placeholder="Paste Anthropic API key...">
+    <div class="tnote">Never paste your key into screenshots or public code.</div>
+    <div class="mbtns">
+      <button class="mcancel" onclick="closeLLMModal()">Cancel</button>
+      <button class="mconfirm" onclick="saveLLMKey()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const TMAP={
+  ai:'AI in Business',
+  consulting:'Consulting & Strategy',
+  management:'Management Thinking',
+  productivity:'Productivity & Decision-Making',
+  mixed:'a mix of: AI in Business, Consulting & Strategy, Management Thinking, Productivity & Decision-Making'
+};
+const TAGS={
+  ai:{l:'AI & Business',c:'t-ai'},
+  consulting:{l:'Consulting',c:'t-con'},
+  management:{l:'Management',c:'t-mgmt'},
+  productivity:{l:'Productivity',c:'t-prod'}
+};
+
+let ST={
+  tok:sessionStorage.getItem('li_tok')||null,
+  name:sessionStorage.getItem('li_name')||null,
+  trends:[],
+  anthropicKey:sessionStorage.getItem('anthropic_key')||''
+};
+
+function openLLMModal(){
+  document.getElementById('llm-modal').classList.add('show');
+  document.getElementById('llm-key-in').value = ST.anthropicKey || '';
+  document.getElementById('llm-key-in').focus();
+}
+function closeLLMModal(){
+  document.getElementById('llm-modal').classList.remove('show');
+  document.getElementById('llm-key-in').value='';
+}
+function saveLLMKey(){
+  const k=document.getElementById('llm-key-in').value.trim();
+  if(!k){toast('Paste a valid Anthropic key','error');return;}
+  ST.anthropicKey=k;
+  sessionStorage.setItem('anthropic_key',k);
+  closeLLMModal();
+  toast('LLM key saved (session only)','success');
+}
+
+(function(){ST.tok?showConn(ST.name):showDisc();})();
+
+function openOAuth(){document.getElementById('oauth-modal').classList.add('show');document.getElementById('tok-in').focus();}
+function closeModal(){document.getElementById('oauth-modal').classList.remove('show');document.getElementById('tok-in').value='';document.getElementById('nam-in').value='';}
+function confirmConnect(){
+  const tok=document.getElementById('tok-in').value.trim();
+  const name=document.getElementById('nam-in').value.trim()||'LinkedIn User';
+  if(!tok){toast('Paste a valid access token','error');return;}
+  ST.tok=tok;ST.name=name;
+  sessionStorage.setItem('li_tok',tok);sessionStorage.setItem('li_name',name);
+  closeModal();showConn(name);toast('LinkedIn connected!','success');
+}
+function disconnect(){
+  ST.tok=null;ST.name=null;
+  sessionStorage.removeItem('li_tok');sessionStorage.removeItem('li_name');
+  showDisc();toast('Disconnected','info');
+}
+function showConn(name){
+  document.getElementById('li-connect-btn').style.display='none';
+  const b=document.getElementById('li-badge');b.style.display='flex';
+  document.getElementById('li-name').textContent=name||'Connected';
+  document.getElementById('connect-gate').style.display='none';
+  document.querySelectorAll('.post-btn').forEach(b=>b.disabled=false);
+}
+function showDisc(){
+  document.getElementById('li-connect-btn').style.display='flex';
+  document.getElementById('li-badge').style.display='none';
+  document.getElementById('connect-gate').style.display='block';
+  document.querySelectorAll('.post-btn').forEach(b=>b.disabled=true);
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function setLoading(on){document.getElementById('gen-btn').disabled=on;document.getElementById('spinner').style.display=on?'block':'none';document.getElementById('btn-text').textContent=on?'Working...':'Generate';}
+function setStatus(t,p){const el=document.getElementById('status');el.classList.toggle('show',!!t);document.getElementById('stext').textContent=t;document.getElementById('sfill').style.width=(p||0)+'%';}
+function showErr(m){const el=document.getElementById('err');el.textContent=m;el.classList.toggle('show',!!m);}
+function toast(msg,type='info'){const t=document.getElementById('toast');t.textContent=(type==='success'?'✓ ':type==='error'?'✗ ':'◆ ')+msg;t.className='show '+type;clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3000);}
+
+function detectTopic(tx){
+  const t=tx.toLowerCase();
+  if(/\\b(ai|llm|gpt|automation|machine learning|generative)\\b/.test(t))return'ai';
+  if(/\\b(consult|strategy|client|transformation|advisory)\\b/.test(t))return'consulting';
+  if(/\\b(leader|manager|team|culture|execut|board)\\b/.test(t))return'management';
+  if(/\\b(productiv|decision|focus|priorit|habit|time)\\b/.test(t))return'productivity';
+  return'ai';
+}
+
+function parseJSON(raw){
+  const i=raw.indexOf('{');
+  const cleaned = i>=0 ? raw.slice(i) : raw;
+  const noMd = cleaned.replace(/```json|```/g,'').trim();
+  return JSON.parse(noMd);
+}
+
+async function apiCall(body){
+  if(!ST.anthropicKey){
+    // Anthropic is optional in this build. If no key is present,
+    // generation falls back to local templates (no API calls).
+    throw new Error('Anthropic disabled (no API key)');
+  }
+
+  const maxAttempts = 6;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ST.anthropicKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (r.status === 429) {
+      const retryAfter = r.headers.get('retry-after');
+      const waitMs = retryAfter
+        ? Math.ceil(parseFloat(retryAfter) * 1000)
+        : Math.min(30000, (1000 * Math.pow(2, attempt)) + Math.random() * 500);
+
+      if (attempt === maxAttempts - 1) {
+        throw new Error('Anthropic 429: rate limit. Please wait and try again.');
+      }
+      toast('Rate-limited (429). Retrying...', 'info');
+      await new Promise(res => setTimeout(res, waitMs));
+      continue;
+    }
+
+    if(!r.ok){
+      const txt = await r.text().catch(()=> '');
+      throw new Error('Anthropic API ' + r.status + (txt ? (': ' + txt) : ''));
+    }
+    return r.json();
+  }
+  throw new Error('Anthropic API failed after retries');
+}
+
+function bucketFromTopicLabel(topicStr){
+  const s=(topicStr||'').toLowerCase();
+  if(s.includes('ai')) return 'ai';
+  if(s.includes('consult')) return 'consulting';
+  if(s.includes('management')) return 'management';
+  if(s.includes('productivity') || s.includes('decision')) return 'productivity';
+  return 'ai';
+}
+
+const FALLBACK_TRENDS={
+  ai:[
+    'AI governance becomes a board topic',
+    'Copilots shift from pilots to operations',
+    'Measuring ROI beats demos',
+    'Risk teams demand auditability',
+    'Workflow automation adoption accelerates'
+  ],
+  consulting:[
+    'Recommendations fail at execution',
+    'Outcome-based scopes win contracts',
+    'Clients demand decision clarity',
+    'Alignment beats slideware',
+    'Measuring cycle time becomes standard'
+  ],
+  management:[
+    'Leadership under ambiguity',
+    'Coaching vs controlling',
+    'Decision latency as a root cause',
+    'Performance without micromanagement',
+    'Culture built on feedback loops'
+  ],
+  productivity:[
+    'Meetings become the bottleneck',
+    'Decision hygiene is the new leverage',
+    'Systems thinking for execution',
+    'Focus blocks beat multitasking',
+    'Momentum with small bets'
+  ]
+};
+
+function pick(arr, idx){return arr[(idx||0) % arr.length];}
+function makeHashtags(list, idx){
+  // Choose 4-6 hashtags deterministically
+  const count=4 + ((idx + list.length) % 3); // 4..6
+  const out=[];
+  for(let i=0;i<count;i++) out.push(list[(idx+i) % list.length]);
+  return out.join(' ');
+}
+
+function fallbackMakePost(bucket, trend, toneDesc, idx){
+  const cfg = {
+    ai:{
+      problems:[
+        'AI pilots stall after launch',
+        'Teams optimize prompts, not outcomes',
+        'Value shows up as “usage” not ROI'
+      ],
+      solutions:[
+        'Run one workflow end-to-end with a baseline and a success metric',
+        'Turn “experiments” into productized automation with ownership',
+        'Instrument decisions: cycle time, error rate, and rework'
+      ],
+      frameworks:[
+        'Use ICE (Impact, Confidence, Ease) to pick the first target',
+        'Track leading indicators before you declare victory',
+        'Govern with audit trails, not policy PDFs'
+      ],
+      hashtags:['#AI','#Automation','#Productivity','#Strategy','#Governance','#Operations','#ROI']
+    },
+    consulting:{
+      problems:[
+        'Most recommendations die during handoff',
+        'The “plan” is clear, the decision is not',
+        'Scopes expand until outcomes evaporate'
+      ],
+      solutions:[
+        'Define the decision in one sentence and measure it with evidence',
+        'Ship a 2-week diagnostic that produces actions, not artifacts',
+        'Align incentives with owners, metrics, and cadence'
+      ],
+      frameworks:[
+        'Use a RACI-lite: one owner, one metric, one review rhythm',
+        'Convert deliverables into operational behaviors',
+        'Design the handoff like a product release'
+      ],
+      hashtags:['#Consulting','#BusinessStrategy','#Operations','#Transformation','#Delivery','#Execution','#Metrics']
+    },
+    management:{
+      problems:[
+        'Micromanagement grows when clarity lags',
+        'Performance discussions become blame sessions',
+        'Leaders treat symptoms, not system constraints'
+      ],
+      solutions:[
+        'Separate coaching from controlling: set outcomes, review evidence',
+        'Reduce decision latency with explicit trade-offs',
+        'Create feedback loops that teach the organization'
+      ],
+      frameworks:[
+        'Use a simple “what/why/how” decision memo every 2 weeks',
+        'Make disagreement visible with structured debate',
+        'Coach on constraints, not vibes'
+      ],
+      hashtags:['#Leadership','#Management','#Strategy','#Execution','#Feedback','#Culture','#Coaching']
+    },
+    productivity:{
+      problems:[
+        'Meeting load quietly destroys decision speed',
+        'Teams confuse busyness with progress',
+        'People multitask because priorities aren’t real'
+      ],
+      solutions:[
+        'Design the week around focus blocks and decision sessions',
+        'Define “done” as a metric and publish it where teams can see it',
+        'Reduce handoffs: fewer approvals, faster feedback'
+      ],
+      frameworks:[
+        'Try 1 KPI + 3 leading signals (not 15 dashboards)',
+        'Use timeboxing: 20-minute decisions, 10-minute reviews',
+        'Build momentum with small bets and tight iteration'
+      ],
+      hashtags:['#Productivity','#DecisionMaking','#Focus','#Leadership','#Strategy','#Operations','#SystemsThinking']
+    }
+  }[bucket] || {};
+
+  const hookByTone={
+    authoritative: [
+      'The uncomfortable truth: speed comes from decisions, not hustle.',
+      'Stop optimizing activity. Start optimizing outcomes.',
+      'Most teams don’t need more effort. They need clearer decisions.'
+    ],
+    contrarian: [
+      'Hot take: your workflow is fine. Your incentives aren’t.',
+      'Contrary to popular belief: meetings aren’t coordination. They’re debt.',
+      'If your pilot needs a pep talk, it needs a new metric.'
+    ],
+    'thought-provoking':[
+      'Question for leaders: what would you cut if you were forced to choose one bottleneck?',
+      'What if “better execution” is actually “better constraints”?',
+      'Where does clarity break in your organization—handoff, ownership, or measurement?'
+    ],
+    'data-driven':[
+      'Here’s the data question that matters: which KPI would improve 20% first?',
+      'If you track cycle time for 4 weeks, your bottleneck stops being theoretical.',
+      'Your dashboard is lying. Measure rework and decision latency instead.'
+    ]
+  }[toneDesc] || [
+    'Here’s the hard part: execution requires decisions, not more information.'
+  ];
+
+  const hook=pick(hookByTone, idx);
+  const problem=pick(cfg.problems, idx);
+  const solution=pick(cfg.solutions, idx);
+  const framework=pick(cfg.frameworks, idx);
+  const closingQ = {
+    authoritative:'Which single metric would you publish this week to prove momentum?',
+    contrarian:'What would you stop doing immediately if it didn’t move that one KPI?',
+    'thought-provoking':'What decision in your org would improve fastest if you made it today?',
+    'data-driven':'If you had to pick one leading indicator to track daily, which would you choose?'
+  }[toneDesc] || 'What decision would you make today with evidence?';
+
+  const trendLine = trend && String(trend).trim()
+    ? `This week’s focus on “${trend}” is really a measurement problem.\n\n`
+    : '';
+
+  const number = 10 + ((idx * 7) % 41); // 10..50
+  const text =
+    `${hook}\n\n` +
+    `${trendLine}` +
+    `${problem}.\n\n` +
+    `The fix is operational: ${solution}.\n\n` +
+    `Use ${framework} and set a target like “${number}% faster” over the next cycle. Then review with evidence, not anecdotes.\n\n` +
+    `${closingQ}\n` +
+    `${makeHashtags(cfg.hashtags || ['#Strategy','#Execution','#Leadership','#AI'], idx)}`;
+
+  return {
+    topic: bucket,
+    trend_ref: trend ? String(trend).trim() : '',
+    text
+  };
+}
+
+async function fetchTrends(topicStr){
+  const bucket=bucketFromTopicLabel(topicStr);
+  const list = FALLBACK_TRENDS[bucket] || FALLBACK_TRENDS.ai;
+  // Simulate “live” by rotating order a bit per refresh
+  const rot = Math.floor(Date.now() / 60000) % list.length;
+  return list.slice(rot).concat(list.slice(0, rot)).slice(0,5);
+}
+
+async function genPosts(trends, topicStr, toneDesc, count){
+  const bucket=bucketFromTopicLabel(topicStr);
+  const tlist = (trends && trends.length) ? trends : (FALLBACK_TRENDS[bucket] || []);
+  const posts=[];
+  for(let i=0;i<count;i++){
+    const trend = tlist.length ? tlist[i % tlist.length] : '';
+    posts.push(fallbackMakePost(bucket, trend, toneDesc, i + count));
+  }
+  return {posts};
+}
+
+async function maybeAutoPost(posts){
+  const mode=document.getElementById('after-gen')?.value || 'manual';
+  if(mode==='manual') return;
+
+  if(!posts || !posts.length) return;
+  if(!ST.tok){
+    toast('Connect LinkedIn first for auto-posting','error');
+    openOAuth();
+    return;
+  }
+
+  // Post sequentially (avoid parallel rate-limit issues)
+  for(let i=0;i<posts.length;i++){
+    document.getElementById('sc-'+i).value='now';
+    await postToLinkedIn(i);
+  }
+}
+
+async function run(){
+  const topic=document.getElementById('topic').value;
+  const tone=document.getElementById('tone').value;
+  const count=parseInt(document.getElementById('count').value);
+  showErr('');setLoading(true);document.getElementById('posts').innerHTML='';
+
+  try{
+    setStatus('Scanning live trends...',15);
+    let trends=[];
+    try{
+      trends=await fetchTrends(TMAP[topic]);
+      ST.trends=trends;
+      renderTrends(trends);
+    }catch(_){
+      ST.trends=[];
+      renderTrends([]);
+    }
+
+    setStatus('Generating posts...',60);
+    const result=await genPosts(trends,TMAP[topic],tone,count);
+    setStatus('',100);
+    renderPosts(result.posts);
+
+    // Auto-post AFTER cards exist in DOM
+    await maybeAutoPost(result.posts);
+    setLoading(false);
+  }catch(e){
+    setLoading(false);
+    setStatus('',0);
+    showErr('Error: '+e.message);
+  }
+}
+
+function renderTrends(trends){
+  const bar=document.getElementById('trend-bar');
+  if(!trends.length){
+    bar.classList.remove('show');
+    return;
+  }
+  document.getElementById('tpills').innerHTML=trends.map(t=>`<span class="tpill">${esc(t)}</span>`).join('');
+  bar.classList.add('show');
+}
+
+function renderPosts(posts){
+  const c=document.getElementById('posts');
+  c.innerHTML='';
+  posts.forEach((p,i)=>{
+    const tk=p.topic||detectTopic(p.text);
+    const tag=TAGS[tk]||TAGS.ai;
+    const lines=p.text.split('\\n');
+    const hl=lines.filter(l=>l.trim().startsWith('#')).join(' ');
+    const bl=lines.filter(l=>!l.trim().startsWith('#'));
+    const fl=bl[0]||'';
+    const rest=bl.slice(1).join('\\n');
+    const hasTrend=p.trend_ref&&p.trend_ref.trim();
+    const cc=p.text.length;
+    const isConn=!!ST.tok;
+
+    const card=document.createElement('div');
+    card.className='pcard';
+    card.dataset.text=p.text;
+    card.dataset.topic=tk;
+    card.dataset.i=i;
+
+    card.innerHTML=`
+      <div class="phead">
+        <div class="pmeta">
+          <span class="pnum">POST ${String(i+1).padStart(2,'0')}</span>
+          <span class="ttag ${tag.c}">${tag.l}</span>
+          ${hasTrend?'<span class="tbadge">↗ trending</span>':''}
+          <span class="pstatus" id="ps-${i}"></span>
+        </div>
+        <div class="pactions">
+          <button class="ibtn" title="Regenerate" onclick="regenPost(${i})">↺</button>
+          <button class="ibtn" title="Copy" onclick="copyPost(this,${i})">⎘</button>
+        </div>
+      </div>
+      <div class="pbody">
+        <div class="ptext" id="pt-${i}">
+          <span class="hook">${esc(fl)}</span>${rest?('\\n'+esc(rest)):''}${hl?('\\n\\n<span class="htags">'+esc(hl)+'</span>'):''}
+        </div>
+      </div>
+      <div class="pfoot">
+        <span class="cct">${cc} chars</span>
+        <div class="sched-wrap">
+          <span class="slabel">Post</span>
+          <select class="sched-sel" id="sc-${i}">
+            <option value="now">Now</option>
+            <option value="1h">In 1 hour</option>
+            <option value="3h">In 3 hours</option>
+            <option value="t9">Tomorrow 9am</option>
+            <option value="t12">Tomorrow 12pm</option>
+            <option value="t18">Tomorrow 6pm</option>
+            <option value="mon">Next Monday 8am</option>
+          </select>
+        </div>
+        <button class="post-btn" id="pb-${i}" onclick="postToLinkedIn(${i})" ${isConn?'':'disabled'}>
+          <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+          <span class="bspin" id="bs-${i}"></span>
+          <span id="bt-${i}">Post to LinkedIn</span>
+        </button>
+        <button class="copy-btn" onclick="copyPost(this,${i})">⎘ Copy</button>
+      </div>`;
+
+    c.appendChild(card);
+  });
+}
+
+function schedDelay(v){
+  const n=new Date();
+  if(v==='now')return 0;
+  if(v==='1h')return 36e5;
+  if(v==='3h')return 108e5;
+  const d=new Date(n);
+  if(v==='t9'){d.setDate(d.getDate()+1);d.setHours(9,0,0,0);}
+  else if(v==='t12'){d.setDate(d.getDate()+1);d.setHours(12,0,0,0);}
+  else if(v==='t18'){d.setDate(d.getDate()+1);d.setHours(18,0,0,0);}
+  else if(v==='mon'){
+    const day=d.getDay();
+    const diff=(8-day)%7||7;
+    d.setDate(d.getDate()+diff);
+    d.setHours(8,0,0,0);
+  }
+  return d-n;
+}
+function schedLbl(v){
+  return{now:'Now','1h':'1 hour','3h':'3 hours',t9:'Tomorrow 9am',t12:'Tomorrow 12pm',t18:'Tomorrow 6pm',mon:'Next Monday 8am'}[v]||v;
+}
+
+function setPSBadge(el,type,label){
+  el.textContent=label;
+  el.className='pstatus';
+  el.classList.add({sched:'ps-sched',live:'ps-live',fail:'ps-fail'}[type]||'');
+  el.style.display='inline-flex';
+}
+
+async function postToLinkedIn(i){
+  if(!ST.tok){openOAuth();return;}
+  const cards=document.querySelectorAll('.pcard');
+  const text=cards[i].dataset.text;
+  const sv=document.getElementById('sc-'+i).value;
+
+  const btn=document.getElementById('pb-'+i);
+  const bs=document.getElementById('bs-'+i);
+  const bt=document.getElementById('bt-'+i);
+  const ps=document.getElementById('ps-'+i);
+
+  btn.disabled=true;
+  bs.style.display='block';
+  bt.textContent=sv==='now'?'Posting...':'Scheduling...';
+
+  const delay=schedDelay(sv);
+
+  try{
+    if(delay>0){
+      setTimeout(()=>doPost(i,text,ps,btn,bs,bt),delay);
+      setPSBadge(ps,'sched','Scheduled: '+schedLbl(sv));
+      bs.style.display='none';
+      bt.textContent='Scheduled';
+      toast('Scheduled for '+schedLbl(sv),'info');
+    }else{
+      await doPost(i,text,ps,btn,bs,bt);
+    }
+  }catch(e){
+    btn.disabled=false;
+    bs.style.display='none';
+    bt.textContent='Post to LinkedIn';
+    setPSBadge(ps,'fail','Failed');
+    toast('Post failed: '+e.message,'error');
+  }
+}
+
+async function doPost(i,text,ps,btn,bs,bt){
+  // Note: These LinkedIn endpoints require a valid token with proper scopes.
+  const pRes=await fetch('https://api.linkedin.com/v2/userinfo',{headers:{'Authorization':'Bearer '+ST.tok}});
+  if(!pRes.ok)throw new Error('LinkedIn auth failed — check your token');
+
+  const profile=await pRes.json();
+  const urn='urn:li:person:'+profile.sub;
+
+  const postRes=await fetch('https://api.linkedin.com/v2/ugcPosts',{
+    method:'POST',
+    headers:{
+      'Authorization':'Bearer '+ST.tok,
+      'Content-Type':'application/json',
+      'X-Restli-Protocol-Version':'2.0.0'
+    },
+    body:JSON.stringify({
+      author:urn,
+      lifecycleState:'PUBLISHED',
+      specificContent:{
+        'com.linkedin.ugc.ShareContent':{
+          shareCommentary:{text},
+          shareMediaCategory:'NONE'
+        }
+      },
+      visibility:{
+        'com.linkedin.ugc.MemberNetworkVisibility':'PUBLIC'
+      }
+    })
+  });
+
+  if(!postRes.ok){
+    const e=await postRes.json().catch(()=>({}));
+    throw new Error(e.message||'LinkedIn API '+postRes.status);
+  }
+
+  bs.style.display='none';
+  bt.textContent='Posted!';
+  setPSBadge(ps,'live','Live on LinkedIn');
+
+  const c=document.querySelector(`.pcard[data-i="${i}"]`);
+  if(c){
+    c.style.borderColor='rgba(34,197,94,.4)';
+    setTimeout(()=>c.style.borderColor='',1200);
+  }
+  toast('Post is live on LinkedIn!','success');
+}
+
+async function copyPost(btn,i){
+  const cards=document.querySelectorAll('.pcard');
+  try{
+    await navigator.clipboard.writeText(cards[i].dataset.text);
+    const orig=btn.innerHTML;
+    btn.classList.add('ok');
+    btn.innerHTML='✓ Copied!';
+    setTimeout(()=>{
+      btn.classList.remove('ok');
+      btn.innerHTML=orig;
+    },1800);
+  }catch(_){
+    toast('Copy failed','error');
+  }
+}
+
+async function regenPost(i){
+  const cards=document.querySelectorAll('.pcard');
+  const card=cards[i];
+  const tk=card.dataset.topic;
+  const tone=document.getElementById('tone').value;
+
+  const rb=card.querySelectorAll('.ibtn')[0];
+  rb.style.opacity='.3';
+  rb.style.pointerEvents='none';
+
+  try{
+    const trend = (ST.trends && ST.trends.length) ? ST.trends[(Date.now() + i) % ST.trends.length] : '';
+    const p = fallbackMakePost(tk, trend, tone, i + Math.floor(Date.now()/1000));
+
+    card.dataset.text=p.text;
+
+    const lines=p.text.split('\\n');
+    const hl=lines.filter(l=>l.trim().startsWith('#')).join(' ');
+    const bl=lines.filter(l=>!l.trim().startsWith('#'));
+    const fl=bl[0]||'';
+    const rest=bl.slice(1).join('\\n');
+
+    document.getElementById('pt-'+i).innerHTML=
+      `<span class="hook">${esc(fl)}</span>${rest?('\\n'+esc(rest)):''}${hl?('\\n\\n<span class="htags">'+esc(hl)+'</span>'):''}`;
+
+    card.querySelector('.cct').textContent=p.text.length+' chars';
+    card.style.borderColor='rgba(124,110,247,.4)';
+    setTimeout(()=>card.style.borderColor='',800);
+
+    const ps=document.getElementById('ps-'+i);
+    ps.style.display='none';
+    const pb=document.getElementById('pb-'+i);
+    document.getElementById('bt-'+i).textContent='Post to LinkedIn';
+    pb.disabled=!ST.tok;
+  }catch(e){
+    toast('Regen failed: '+e.message,'error');
+  }
+
+  rb.style.opacity='';
+  rb.style.pointerEvents='';
+}
+</script>
+</body>
+</html>
+
