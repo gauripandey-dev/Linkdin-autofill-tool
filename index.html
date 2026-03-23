@@ -296,48 +296,34 @@ const TAGS={
 };
 
 let ST={
-  tok:sessionStorage.getItem('li_tok')||null,
-  name:sessionStorage.getItem('li_name')||null,
+  connected:false,
+  name:null,
   trends:[],
   anthropicKey:sessionStorage.getItem('anthropic_key')||''
 };
 
-function openLLMModal(){
-  document.getElementById('llm-modal').classList.add('show');
-  document.getElementById('llm-key-in').value = ST.anthropicKey || '';
-  document.getElementById('llm-key-in').focus();
-}
-function closeLLMModal(){
-  document.getElementById('llm-modal').classList.remove('show');
-  document.getElementById('llm-key-in').value='';
-}
-function saveLLMKey(){
-  const k=document.getElementById('llm-key-in').value.trim();
-  if(!k){toast('Paste a valid Anthropic key','error');return;}
-  ST.anthropicKey=k;
-  sessionStorage.setItem('anthropic_key',k);
-  closeLLMModal();
-  toast('LLM key saved (session only)','success');
+function openOAuth(){
+  // Redirect user into backend OAuth flow. Backend will set an HttpOnly cookie.
+  window.location.href='/api/linkedin/login';
 }
 
-(function(){ST.tok?showConn(ST.name):showDisc();})();
-
-function openOAuth(){document.getElementById('oauth-modal').classList.add('show');document.getElementById('tok-in').focus();}
+// Anthropic is not required in fallback-only mode.
+function openLLMModal(){}
+function closeLLMModal(){}
+function saveLLMKey(){toast('LLM key not needed (fallback mode).','info');}
 function closeModal(){document.getElementById('oauth-modal').classList.remove('show');document.getElementById('tok-in').value='';document.getElementById('nam-in').value='';}
-function confirmConnect(){
-  const tok=document.getElementById('tok-in').value.trim();
-  const name=document.getElementById('nam-in').value.trim()||'LinkedIn User';
-  if(!tok){toast('Paste a valid access token','error');return;}
-  ST.tok=tok;ST.name=name;
-  sessionStorage.setItem('li_tok',tok);sessionStorage.setItem('li_name',name);
-  closeModal();showConn(name);toast('LinkedIn connected!','success');
-}
 function disconnect(){
-  ST.tok=null;ST.name=null;
-  sessionStorage.removeItem('li_tok');sessionStorage.removeItem('li_name');
-  showDisc();toast('Disconnected','info');
+  fetch('/api/linkedin/disconnect',{method:'POST'})
+    .catch(()=>null)
+    .finally(()=>{
+      ST.connected=false;
+      ST.name=null;
+      showDisc();
+      toast('Disconnected','info');
+    });
 }
 function showConn(name){
+  ST.connected=true;
   document.getElementById('li-connect-btn').style.display='none';
   const b=document.getElementById('li-badge');b.style.display='flex';
   document.getElementById('li-name').textContent=name||'Connected';
@@ -345,11 +331,30 @@ function showConn(name){
   document.querySelectorAll('.post-btn').forEach(b=>b.disabled=false);
 }
 function showDisc(){
+  ST.connected=false;
   document.getElementById('li-connect-btn').style.display='flex';
   document.getElementById('li-badge').style.display='none';
   document.getElementById('connect-gate').style.display='block';
   document.querySelectorAll('.post-btn').forEach(b=>b.disabled=true);
 }
+
+async function refreshLinkedInStatus(){
+  try{
+    const r=await fetch('/api/linkedin/status');
+    const d=await r.json();
+    if(d && d.connected){
+      showConn(d.name);
+    }else{
+      showDisc();
+    }
+  }catch(_){
+    showDisc();
+  }
+}
+
+(function(){
+  refreshLinkedInStatus();
+})();
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function setLoading(on){document.getElementById('gen-btn').disabled=on;document.getElementById('spinner').style.display=on?'block':'none';document.getElementById('btn-text').textContent=on?'Working...':'Generate';}
@@ -621,7 +626,7 @@ async function maybeAutoPost(posts){
   if(mode==='manual') return;
 
   if(!posts || !posts.length) return;
-  if(!ST.tok){
+  if(!ST.connected){
     toast('Connect LinkedIn first for auto-posting','error');
     openOAuth();
     return;
@@ -690,7 +695,7 @@ function renderPosts(posts){
     const rest=bl.slice(1).join('\\n');
     const hasTrend=p.trend_ref&&p.trend_ref.trim();
     const cc=p.text.length;
-    const isConn=!!ST.tok;
+    const isConn=!!ST.connected;
 
     const card=document.createElement('div');
     card.className='pcard';
@@ -771,7 +776,7 @@ function setPSBadge(el,type,label){
 }
 
 async function postToLinkedIn(i){
-  if(!ST.tok){openOAuth();return;}
+  if(!ST.connected){openOAuth();return;}
   const cards=document.querySelectorAll('.pcard');
   const text=cards[i].dataset.text;
   const sv=document.getElementById('sc-'+i).value;
@@ -807,11 +812,10 @@ async function postToLinkedIn(i){
 }
 
 async function doPost(i,text,ps,btn,bs,bt){
-  // Server-side posting to avoid CORS and browser restrictions.
   const postRes=await fetch('/api/linkedin/post',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({access_token: ST.tok, text})
+    body:JSON.stringify({text})
   });
 
   if(!postRes.ok){
@@ -880,7 +884,7 @@ async function regenPost(i){
     ps.style.display='none';
     const pb=document.getElementById('pb-'+i);
     document.getElementById('bt-'+i).textContent='Post to LinkedIn';
-    pb.disabled=!ST.tok;
+    pb.disabled=!ST.connected;
   }catch(e){
     toast('Regen failed: '+e.message,'error');
   }
