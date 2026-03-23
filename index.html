@@ -807,38 +807,16 @@ async function postToLinkedIn(i){
 }
 
 async function doPost(i,text,ps,btn,bs,bt){
-  // Note: These LinkedIn endpoints require a valid token with proper scopes.
-  const pRes=await fetch('https://api.linkedin.com/v2/userinfo',{headers:{'Authorization':'Bearer '+ST.tok}});
-  if(!pRes.ok)throw new Error('LinkedIn auth failed — check your token');
-
-  const profile=await pRes.json();
-  const urn='urn:li:person:'+profile.sub;
-
-  const postRes=await fetch('https://api.linkedin.com/v2/ugcPosts',{
+  // Server-side posting to avoid CORS and browser restrictions.
+  const postRes=await fetch('/api/linkedin/post',{
     method:'POST',
-    headers:{
-      'Authorization':'Bearer '+ST.tok,
-      'Content-Type':'application/json',
-      'X-Restli-Protocol-Version':'2.0.0'
-    },
-    body:JSON.stringify({
-      author:urn,
-      lifecycleState:'PUBLISHED',
-      specificContent:{
-        'com.linkedin.ugc.ShareContent':{
-          shareCommentary:{text},
-          shareMediaCategory:'NONE'
-        }
-      },
-      visibility:{
-        'com.linkedin.ugc.MemberNetworkVisibility':'PUBLIC'
-      }
-    })
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({access_token: ST.tok, text})
   });
 
   if(!postRes.ok){
     const e=await postRes.json().catch(()=>({}));
-    throw new Error(e.message||'LinkedIn API '+postRes.status);
+    throw new Error(e.detail || 'LinkedIn post failed '+postRes.status);
   }
 
   bs.style.display='none';
